@@ -46,6 +46,11 @@ if [ "${WARP_ENABLED}" = "true" ]; then
     fi
 fi
 
-# ── 启动主程序（xvfb-run 提供虚拟显示器） ──
-exec xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
-    python -u main.py
+# ── 启动虚拟显示器 ──
+echo "🖥️  启动 Xvfb 虚拟显示器..."
+Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp &
+sleep 1
+export DISPLAY=:99
+
+# ── 启动主程序 ──
+exec python -u main.py

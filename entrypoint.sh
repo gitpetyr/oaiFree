@@ -12,7 +12,7 @@ if [ "${WARP_ENABLED}" = "true" ]; then
     # 首次注册（已注册则跳过）
     if ! warp-cli registration show &>/dev/null; then
         echo "📝 注册 WARP..."
-        warp-cli registration new
+        warp-cli registration new --accept-tos
     fi
 
     # 设置为代理模式（SOCKS5 on 127.0.0.1:40000）

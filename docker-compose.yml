@@ -1,0 +1,18 @@
+services:
+  oaifree:
+    image: zhongxiaoma/oaifree:latest
+    container_name: oaifree
+    restart: unless-stopped
+    environment:
+      - RUN_COUNT=0          # 注册次数，0 = 无限
+      - RUN_INTERVAL=0       # 每轮间隔（秒）
+      - HEADLESS=true        # 伪无头模式
+      - LOG_ENABLED=false    # 日志记录
+      - WARP_ENABLED=true   # 内置 Cloudflare WARP 代理
+      - PROXY=               # 第三方代理，如 socks5://host:port（WARP 开启时留空自动使用 WARP）
+    volumes:
+      - ./tokens:/app/tokens
+      - ./logs:/app/logs
+    shm_size: "2gb"
+    cap_add:
+      - NET_ADMIN            # WARP 需要网络权限（不用 WARP 可删除）

@@ -28,41 +28,62 @@ from gptmail import GptMail
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 # ═══════════════════════════════════════════════════════
-# 配置文件管理
+# 配置管理（环境变量 → config.json 回退）
 # ═══════════════════════════════════════════════════════
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.json")
 
-def load_config():
-    """加载配置文件。"""
-    if not os.path.exists(CONFIG_PATH):
-        print(f"❌ 配置文件不存在: {CONFIG_PATH}")
-        exit(1)
 
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        config = json.load(f)
-
-    # token_dir / log_dir 支持相对路径（相对于脚本目录）
-    for key, default in [("token_dir", "tokens"), ("log_dir", "logs")]:
-        val = config.get(key, default)
-        if not os.path.isabs(val):
-            config[key] = os.path.join(SCRIPT_DIR, val)
-
-    return config
+def _load_file_config():
+    """尝试加载 config.json 作为回退配置源。"""
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
 
-cfg = load_config()
+def _env(name, default=None):
+    """从环境变量读取，回退到 config.json 对应字段。"""
+    val = os.environ.get(name)
+    if val is not None:
+        return val
+    # 环境变量名 → config.json 字段名（全小写）
+    return _file_cfg.get(name.lower(), default)
 
-# ═══════════════════════════════════════════════════════
-# 从配置中读取参数
-# ═══════════════════════════════════════════════════════
-TOKEN_DIR = cfg["token_dir"]
-LOG_DIR = cfg.get("log_dir", os.path.join(SCRIPT_DIR, "logs"))
-RUN_COUNT = cfg.get("run_count", 1)
-RUN_INTERVAL = cfg.get("run_interval", 60)
-HEADLESS = cfg.get("headless", False)
-PROXY = cfg.get("proxy", None)
-LOG_ENABLED = cfg.get("log_enabled", False)
+
+def _env_bool(name, default=False):
+    val = _env(name)
+    if val is None:
+        return default
+    if isinstance(val, bool):
+        return val
+    return str(val).lower() in ("true", "1", "yes")
+
+
+def _env_int(name, default=0):
+    val = _env(name)
+    if val is None:
+        return default
+    return int(val)
+
+
+def _resolve_path(val, default):
+    """将相对路径解析为基于脚本目录的绝对路径。"""
+    val = val or default
+    if not os.path.isabs(val):
+        val = os.path.join(SCRIPT_DIR, val)
+    return val
+
+
+_file_cfg = _load_file_config()
+
+RUN_COUNT   = _env_int("RUN_COUNT", 0)
+RUN_INTERVAL = _env_int("RUN_INTERVAL", 0)
+TOKEN_DIR   = _resolve_path(_env("TOKEN_DIR"), "tokens")
+LOG_DIR     = _resolve_path(_env("LOG_DIR"), "logs")
+HEADLESS    = _env_bool("HEADLESS", False)
+LOG_ENABLED = _env_bool("LOG_ENABLED", False)
+PROXY       = _env("PROXY") or None
 
 
 # ═══════════════════════════════════════════════════════

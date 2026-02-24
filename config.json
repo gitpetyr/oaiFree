@@ -1,0 +1,9 @@
+{
+    "run_count": 0,
+    "run_interval": 0,
+    "token_dir": "./tokens",
+    "headless": false,
+    "log_enabled": false,
+    "log_dir": "./logs",
+    "proxy": ""
+}
